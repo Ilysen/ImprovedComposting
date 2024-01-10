@@ -1,0 +1,13 @@
+{
+    "type": "code",
+    "modid": "ava_improvedcomposting",
+    "name": "Improved Composting",
+    "authors": [
+        "Ava"
+    ],
+    "description": "To be added",
+    "version": "1.0.0",
+    "dependencies": {
+        "game": ""
+    }
+}
