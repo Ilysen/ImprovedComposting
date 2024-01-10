@@ -14,8 +14,18 @@
 		"lid": { base: "game:block/wood/barrel/lid" }
 	},
 	attributes: {
-		partialAttachable: true,
-		capacityLitres: 50
+		compostables: {
+			"greens": [
+				{ type: "item", code: "fruit-*", quantity: 4 },
+				{ type: "item", code: "vegetable-*", quantity: 4 }
+			],
+			"browns": [
+				{ type: "item", code: "drygrass", quantity: 8 },
+				{ type: "item", code: "stick", quantity: 8 },
+				{ type: "item", code: "firewood", quantity: 4 },
+				{ type: "item", code: "plank-*", quantity: 6 }
+			]
+		}
 	},
 	sideao: {
 		all: false
@@ -45,7 +55,7 @@
 		"place": "game:block/planks",
 		"hit": "game:block/planks",
 		"break": "game:block/planks",
-		"walk": "walkgame:/wood"
+		"walk": "game:walk/wood"
 	},
 	materialDensity: 600,
 	heldTpIdleAnimation: "holdbothhandslarge", heldRightReadyAnimation: "heldblockready", heldTpUseAnimation: "twohandplaceblock",

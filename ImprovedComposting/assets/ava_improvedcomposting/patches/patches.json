@@ -1,0 +1,9 @@
+[
+	{ 
+		file: "game:recipes/barrel/compost", 
+		op: "add", 
+		path: "/enabled", 
+		value: "false", 
+		side: "server" 
+	}
+]

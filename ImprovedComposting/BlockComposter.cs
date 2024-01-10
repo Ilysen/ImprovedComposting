@@ -1,13 +1,12 @@
 ﻿using Vintagestory.API.Client;
 using Vintagestory.API.Common;
-using Vintagestory.API.Config;
-using Vintagestory.API.MathTools;
-using Vintagestory.API.Server;
 using Vintagestory.API.Util;
-using Vintagestory.GameContent;
 
 namespace ImprovedComposting
 {
+	/// <summary>
+	/// Block class for the compost bin block. This class is more or less empty, with the sole exception of handling interaction popups.
+	/// </summary>
 	public class BlockComposter : Block
 	{
 		public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel)
@@ -33,7 +32,7 @@ namespace ImprovedComposting
 					MouseButton = EnumMouseButton.Right
 				});
 			}
-			else if (_composter.Layers < BlockEntityComposter.LayerCapacity)
+			else if (_composter.Layers < BlockEntityComposter.LayersNeeded)
 			{
 				interactions.Append(new WorldInteraction()
 				{
@@ -52,7 +51,8 @@ namespace ImprovedComposting
 				interactions.Append(new WorldInteraction()
 				{
 					ActionLangCode = "blockhelp-composter-turn",
-					MouseButton = EnumMouseButton.Right
+					MouseButton = EnumMouseButton.Right,
+					HotKeyCode = "shift"
 				});
 			}
 			return interactions;

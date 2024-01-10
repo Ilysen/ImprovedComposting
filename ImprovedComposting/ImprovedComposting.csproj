@@ -35,6 +35,8 @@
   </Content>
   <None Remove="assets\ava_improvedcomposting\blocktypes\composter.json" />
   <None Remove="assets\ava_improvedcomposting\config\handbook\composting.json" />
+  <None Remove="assets\ava_improvedcomposting\patches\patches.json" />
+  <None Remove="assets\ava_improvedcomposting\recipes\grid\composter.json" />
   <Content Include="modinfo.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
   </Content>

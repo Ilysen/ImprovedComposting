@@ -1,0 +1,15 @@
+[
+	{
+		ingredientPattern: "LLN,p_p,PBP",
+		ingredients: {
+			"p": { type: "item", code: "game:plank-*" },
+			"P": { type: "item", code: "game:plank-*", quantity: 2 },
+			"B": { type: "block", code: "game:planks-*-ns", quantity: 2 },
+			"L": { type: "block", code: "game:plankslab-*-down-free" },
+			"N": { type: "item", code: "game:metalnailsandstrips-*", quantity: 2 }
+		},
+		width: 3,
+		height: 3,
+		output: { type: "block", code: "composter" }
+	}
+]

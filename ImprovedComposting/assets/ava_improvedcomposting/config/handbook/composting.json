@@ -1,5 +1,5 @@
 {
-	pageCode: "craftinginfo-composting",
-	title: "craftinginfo-composting-title",
-	text: "craftinginfo-composting-text"
+	pageCode: "ava_improvedcomposting:craftinginfo-composting",
+	title: "ava_improvedcomposting:craftinginfo-composting-title",
+	text: "ava_improvedcomposting:craftinginfo-composting-text"
 }
