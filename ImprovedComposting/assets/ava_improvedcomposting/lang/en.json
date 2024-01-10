@@ -19,7 +19,6 @@
     "info-composter-lastturned": "Last turned {0} days ago",
     "info-composter-decompositionrate": "Decomposition rate: <font color=\"{0}\">{1}%</font>",
     "info-composter-decompositionprogress": "{0}% decomposed ({1} days left at current rate)",
-    "info-composter-halted": "<font color=\"#ff4848\">Decomposition halted!</font>",
     "info-composter-needsturning": "<font color=\"#ff8484\">Needs to be turned</font>",
     "info-composter-toodry": "<font color=\"#ff8484\">Too dry; needs more water</font>",
     "info-composter-toowet": "<font color=\"#ff8484\">Too wet; close the lid if it's rainy</font>",
