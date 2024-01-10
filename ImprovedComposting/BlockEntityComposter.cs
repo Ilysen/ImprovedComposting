@@ -85,7 +85,7 @@ namespace ImprovedComposting
 		#endregion
 
 		#region Properties and getters
-		private bool NeedsBrowns => Layers < Math.Floor((double)LayersNeeded / 2) || Layers % 2 != 0;
+		private bool NeedsBrowns => Layers < Math.Floor((double)LayersNeeded / 2) || Layers % 2 == 0;
 		private float IdealDecompositionRate => (float)Math.Round(1f / NumberOfHoursRequired, 4);
 
 		/// <summary>
@@ -149,11 +149,11 @@ namespace ImprovedComposting
 			}
 			else
 			{
-				dsc.AppendLine($"Wetness {Wetness}");
+				/*dsc.AppendLine($"Wetness {Wetness}");
 				dsc.AppendLine($"CachedDecompositionRate {CachedDecompositionRate}");
 				dsc.AppendLine($"LastTurn {LastTurn}");
 				dsc.AppendLine($"LastUpdate {LastUpdate}");
-				dsc.AppendLine("");
+				dsc.AppendLine("");*/
 
 				/*double lastTurned = Api.World.Calendar.TotalHours - LastTurn;
 				if (lastTurned < 25)
