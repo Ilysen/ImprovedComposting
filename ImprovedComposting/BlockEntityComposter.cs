@@ -260,16 +260,16 @@ namespace ImprovedComposting
 					{
 						if (hotbarSlot.Itemstack.Collectible.WildCardMatch(stack.Code) && hotbarSlot.Itemstack.StackSize >= stack.Quantity)
 						{
-							if (byPlayer.Entity.Player.WorldData.CurrentGameMode != EnumGameMode.Creative)
-							{
-								hotbarSlot.TakeOut(stack.Quantity);
-								hotbarSlot.MarkDirty();
-							}
 							AssetLocation sndId = new("sounds/effect/squish1");
 							if (hotbarSlot.Itemstack.Collectible.Attributes?["placeSound"].Exists == true)
 								sndId = AssetLocation.Create(hotbarSlot.Itemstack.Collectible.Attributes["placeSound"].AsString(), hotbarSlot.Itemstack.Collectible.Code.Domain).WithPathPrefixOnce("sounds/");
 							Api.World.PlaySoundAt(sndId, Pos.X + 0.5, Pos.Y + 0.1, Pos.Z + 0.5, byPlayer, true, 12);
 							AddLayer();
+							if (byPlayer.Entity.Player.WorldData.CurrentGameMode != EnumGameMode.Creative)
+							{
+								hotbarSlot.TakeOut(stack.Quantity);
+								hotbarSlot.MarkDirty();
+							}
 							break;
 						}
 					}

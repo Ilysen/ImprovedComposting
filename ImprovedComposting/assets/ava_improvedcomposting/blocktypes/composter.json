@@ -16,14 +16,24 @@
 	attributes: {
 		compostables: {
 			"greens": [
+				{ type: "item", code: "pressedmash-*", quantity: 4 },
+				{ type: "item", code: "fruit-*currant", quantity: 16 },
+				{ type: "item", code: "fruit-*berry", quantity: 16 },
 				{ type: "item", code: "fruit-*", quantity: 4 },
-				{ type: "item", code: "vegetable-*", quantity: 4 }
+				{ type: "item", code: "vegetable-*", quantity: 4 },
+				{ type: "item", code: "egg-*-raw", quantity: 4 }
 			],
 			"browns": [
 				{ type: "item", code: "drygrass", quantity: 8 },
 				{ type: "item", code: "stick", quantity: 8 },
 				{ type: "item", code: "firewood", quantity: 4 },
-				{ type: "item", code: "plank-*", quantity: 6 }
+				{ type: "item", code: "plank-*", quantity: 6 },
+				{ type: "item", code: "paper-*", quantity: 1 },
+				{ type: "item", code: "book-*", quantity: 1 },
+				{ type: "item", code: "lore-*", quantity: 1 },
+				{ type: "block", code: "flower-*", quantity: 6 },
+				{ type: "block", code: "fern-*", quantity: 4 },
+				{ type: "block", code: "tallfern-*", quantity: 4 }
 			]
 		}
 	},
