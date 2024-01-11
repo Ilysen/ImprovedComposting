@@ -31,9 +31,9 @@ namespace ImprovedComposting
 		public static readonly ushort TurnInterval = 72;
 
 		/// <summary>
-		/// How much wetness the composter will gain every second under the rain.
+		/// How much wetness the composter will gain every tick under the rain. This is multiplied by precipitation level.
 		/// </summary>
-		public static readonly float WetnessGainInRainPerSecond = 0.0002f;
+		public static readonly float WetnessGainFromRainPerTick = 0.01f;
 
 		/// <summary>
 		/// How much wetness the composter will lose every hour.
@@ -149,11 +149,11 @@ namespace ImprovedComposting
 			}
 			else
 			{
-				/*dsc.AppendLine($"Wetness {Wetness}");
+				dsc.AppendLine($"Wetness {Wetness}");
 				dsc.AppendLine($"CachedDecompositionRate {CachedDecompositionRate}");
 				dsc.AppendLine($"LastTurn {LastTurn}");
 				dsc.AppendLine($"LastUpdate {LastUpdate}");
-				dsc.AppendLine("");*/
+				dsc.AppendLine("");
 
 				/*double lastTurned = Api.World.Calendar.TotalHours - LastTurn;
 				if (lastTurned < 25)
@@ -189,24 +189,26 @@ namespace ImprovedComposting
 		{
 			if (Layers != LayersNeeded)
 				return;
-			if (Api.World.BlockAccessor.GetRainMapHeightAt(Pos) <= Pos.Y && LidClosed)
-			{
-				_tmpPos.Set(Pos.X + 0.5, Pos.Y + 0.5, Pos.Z + 0.5);
-				float precip = _wsys.GetPrecipitation(_tmpPos);
-				// When exposed to rain, wetness increases by 0.01% per second
-				if (precip > 0.04)
-				{
-					Wetness = (float)Math.Round(Math.Min(1, Wetness + (precip * WetnessGainInRainPerSecond)), 4);
-					MarkDirty();
-				}
-			}
-			if (LastUpdate == Math.Floor(Api.World.Calendar.TotalHours))
+			int floorHrs = (int)Math.Floor(Api.World.Calendar.TotalHours);
+			if (LastUpdate == floorHrs)
 				return;
-			CalculateDecompRate();
-			DecompositionProgress += CachedDecompositionRate;
-			// Reduce wetness by 0.4% per hour
-			Wetness = (float)Math.Round(Math.Max(0, Wetness - WetnessLossPerTick), 4);
-			LastUpdate = Math.Floor(Api.World.Calendar.TotalHours);
+			bool exposedToRain = Api.World.BlockAccessor.GetRainMapHeightAt(Pos) <= Pos.Y && !LidClosed;
+			for (int i = (int)LastUpdate + 1; i <= floorHrs; i++)
+			{
+				Api.World.Logger.Event($"Parsing update for hour {i}/{floorHrs}");
+				CalculateDecompRate(i);
+				DecompositionProgress += CachedDecompositionRate;
+				if (exposedToRain)
+				{
+					_tmpPos.Set(Pos.X + 0.5, Pos.Y + 0.5, Pos.Z + 0.5);
+					float precip = _wsys.GetPrecipitation(_tmpPos.X, _tmpPos.Y, _tmpPos.Z, i / Api.World.Calendar.HoursPerDay);
+					Api.World.Logger.Event($"Precipitation at day {i / Api.World.Calendar.HoursPerDay}: {precip}");
+					if (precip > 0.04)
+						Wetness = (float)Math.Round(Math.Min(1, Wetness + (precip * WetnessGainFromRainPerTick)), 4);
+				}
+				Wetness = (float)Math.Round(Math.Max(0, Wetness - WetnessLossPerTick), 4);
+			}
+			LastUpdate = floorHrs;
 			MarkDirty();
 		}
 
@@ -302,10 +304,12 @@ namespace ImprovedComposting
 		/// <item>A penalty is applied for wetness above or below optimal value, starting at 0% when <c>Wetness</c> is at 0.25 or 0.75 and scaling to 50% when <c>Wetness</c> is at 0 or 1</item>
 		/// </list>
 		/// </summary>
-		private void CalculateDecompRate()
+		private void CalculateDecompRate(double timestamp = 0)
 		{
+			if (timestamp == 0)
+				timestamp = Api.World.Calendar.TotalHours;
 			float baseRate = IdealDecompositionRate;
-			var lastTurned = Api.World.Calendar.TotalHours - LastTurn;
+			var lastTurned = timestamp - LastTurn;
 			if (lastTurned >= TurnInterval)
 			{
 				float turnMult = (float)((TurnInterval * 2 / Math.Min(TurnInterval * 2, lastTurned)) - 1);
