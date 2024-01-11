@@ -14,7 +14,7 @@ namespace ImprovedComposting
 	/// </summary>
 	public class BlockEntityComposter : BlockEntityGeneric
 	{
-		private static readonly bool DEBUG = true;
+		private static readonly bool DEBUG = false;
 
 		#region Balancing
 		/// <summary>
@@ -102,9 +102,9 @@ namespace ImprovedComposting
 		{
 			get
 			{
-				float daysElapsed = ((DecompositionProgress * NumberOfHoursRequired) * (IdealDecompositionRate / CachedDecompositionRate)) / Api.World.Calendar.HoursPerDay;
+				float daysElapsed = (((1 - DecompositionProgress) * NumberOfHoursRequired) * (IdealDecompositionRate / CachedDecompositionRate)) / Api.World.Calendar.HoursPerDay;
 				if (DEBUG)
-					Api.World.Logger.Event($"Ran DaysLeft with the following data and result: (({DecompositionProgress} * {NumberOfHoursRequired}) * ({IdealDecompositionRate} / {CachedDecompositionRate})) / {Api.World.Calendar.HoursPerDay} == {daysElapsed}");
+					Api.World.Logger.Event($"Ran DaysLeft with the following data and result: (((1 - {DecompositionProgress}) * {NumberOfHoursRequired}) * ({IdealDecompositionRate} / {CachedDecompositionRate})) / {Api.World.Calendar.HoursPerDay} == {daysElapsed}");
 				return Math.Min(99, (float)Math.Round(daysElapsed, 1));
 			}
 		}
@@ -362,9 +362,7 @@ namespace ImprovedComposting
 			}
 			var wetnessDiff = Math.Abs(Wetness - 0.5f);
 			if (wetnessDiff > 0.25f)
-			{
 				baseRate *= Math.Max(0.5f, 1 - (2 * wetnessDiff));
-			}
 			CachedDecompositionRate = Math.Max(IdealDecompositionRate * 0.25f, (float)Math.Round(baseRate, 4));
 		}
 		#endregion
