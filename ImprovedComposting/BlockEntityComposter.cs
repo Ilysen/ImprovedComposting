@@ -14,6 +14,8 @@ namespace ImprovedComposting
 	/// </summary>
 	public class BlockEntityComposter : BlockEntityGeneric
 	{
+		private static readonly bool DEBUG = true;
+
 		#region Balancing
 		/// <summary>
 		/// How long it takes for a batch of compost to complete at an optimal rate throughout.
@@ -39,6 +41,11 @@ namespace ImprovedComposting
 		/// How much wetness the composter will lose every hour.
 		/// </summary>
 		public static readonly float WetnessLossPerTick = 0.004f;
+
+		/// <summary>
+		/// One liter of water will increment wetness by this much.
+		/// </summary>
+		public static readonly float WaterConversionRatio = 0.05f;
 		#endregion
 
 		#region Logic fields
@@ -95,9 +102,10 @@ namespace ImprovedComposting
 		{
 			get
 			{
-				float daysReq = NumberOfHoursRequired / Api.World.Calendar.HoursPerDay;
-				float daysElapsed = (DecompositionProgress * NumberOfHoursRequired) * (IdealDecompositionRate / CachedDecompositionRate) / Api.World.Calendar.HoursPerDay;
-				return Math.Min(99, (float)Math.Round(daysReq - daysElapsed, 2));
+				float daysElapsed = ((DecompositionProgress * NumberOfHoursRequired) * (IdealDecompositionRate / CachedDecompositionRate)) / Api.World.Calendar.HoursPerDay;
+				if (DEBUG)
+					Api.World.Logger.Event($"Ran DaysLeft with the following data and result: (({DecompositionProgress} * {NumberOfHoursRequired}) * ({IdealDecompositionRate} / {CachedDecompositionRate})) / {Api.World.Calendar.HoursPerDay} == {daysElapsed}");
+				return Math.Min(99, (float)Math.Round(daysElapsed, 1));
 			}
 		}
 		#endregion
@@ -149,22 +157,35 @@ namespace ImprovedComposting
 			}
 			else
 			{
-				dsc.AppendLine($"Wetness {Wetness}");
-				dsc.AppendLine($"CachedDecompositionRate {CachedDecompositionRate}");
-				dsc.AppendLine($"LastTurn {LastTurn}");
-				dsc.AppendLine($"LastUpdate {LastUpdate}");
-				dsc.AppendLine("");
-
-				/*double lastTurned = Api.World.Calendar.TotalHours - LastTurn;
-				if (lastTurned < 25)
-					dsc.AppendLine(ImprovedCompostingSystem.GetLang("info-composter-lastturnedrecently"));
-				else
-					dsc.AppendLine(ImprovedCompostingSystem.GetLang("info-composter-lastturned", Math.Round(lastTurned / Api.World.Calendar.HoursPerDay, 2)));*/
+				if (DEBUG)
+				{
+					dsc.AppendLine($"=== DEBUG INFO ===");
+					dsc.AppendLine($"Wetness {Wetness}");
+					dsc.AppendLine($"CachedDecompositionRate {CachedDecompositionRate}");
+					dsc.AppendLine($"LastTurn {LastTurn}");
+					dsc.AppendLine($"LastUpdate {LastUpdate}");
+					dsc.AppendLine($"==================");
+					dsc.AppendLine("");
+				}
 
 				double decompRate = Math.Round(CachedDecompositionRate / IdealDecompositionRate * 100d, 2);
 				string decompRateColor = ColorUtil.Int2Hex(GuiStyle.DamageColorGradient[(int)Math.Min(99, Math.Max(1, decompRate))]);
-				dsc.AppendLine(ImprovedCompostingSystem.GetLang("info-composter-decompositionprogress", Math.Round(DecompositionProgress * 100f, 2), Math.Round(DaysLeft, 2), 2));
+				dsc.AppendLine(ImprovedCompostingSystem.GetLang("info-composter-decompositionprogress", Math.Round(DecompositionProgress * 100f, 1), DaysLeft));
 				dsc.AppendLine(ImprovedCompostingSystem.GetLang("info-composter-decompositionrate", decompRateColor, decompRate));
+
+				// This code is a bit complicated, but the goal is to sharply "worsen" the color gradient when wetness is out of the comfortable bounds compared to when it's within
+				// Anywhere from 25% to 75% will appear at bare minimum as yellow-green; beyond those points will quickly turn to dark red to indicate that it's now a bad thing
+				float wetnessDiff = Math.Abs(Wetness - 0.5f);
+				float wetnessGradient = 1 - (wetnessDiff > 0.25f ? wetnessDiff * 2 : wetnessDiff);
+				string wetnessColor = ColorUtil.Int2Hex(GuiStyle.DamageColorGradient[(int)Math.Min(99, Math.Max(1, wetnessGradient * 100f))]);
+				dsc.AppendLine(ImprovedCompostingSystem.GetLang("info-composter-wetness", wetnessColor, Math.Round(Wetness * 100f, 1)));
+
+				double lastTurned = Api.World.Calendar.TotalHours - LastTurn;
+				if (lastTurned < Api.World.Calendar.HoursPerDay + 1)
+					dsc.AppendLine(ImprovedCompostingSystem.GetLang("info-composter-lastturnedrecently"));
+				else
+					dsc.AppendLine(ImprovedCompostingSystem.GetLang("info-composter-lastturned", Math.Round(lastTurned / Api.World.Calendar.HoursPerDay, 2)));
+
 				if (LidClosed)
 					dsc.AppendLine(ImprovedCompostingSystem.GetLang("info-composter-lidclosed"));
 				else
@@ -172,9 +193,9 @@ namespace ImprovedComposting
 
 				if (Api.World.Calendar.TotalHours - LastTurn >= TurnInterval)
 					dsc.AppendLine(ImprovedCompostingSystem.GetLang("info-composter-needsturning"));
-				if (Wetness <= 0.25f)
+				if (Wetness < 0.25f)
 					dsc.AppendLine(ImprovedCompostingSystem.GetLang("info-composter-toodry"));
-				else if (Wetness >= 0.75f)
+				else if (Wetness > 0.75f)
 					dsc.AppendLine(ImprovedCompostingSystem.GetLang("info-composter-toowet"));
 			}
 			base.GetBlockInfo(forPlayer, dsc);
@@ -195,14 +216,16 @@ namespace ImprovedComposting
 			bool exposedToRain = Api.World.BlockAccessor.GetRainMapHeightAt(Pos) <= Pos.Y && !LidClosed;
 			for (int i = (int)LastUpdate + 1; i <= floorHrs; i++)
 			{
-				Api.World.Logger.Event($"Parsing update for hour {i}/{floorHrs}");
+				if (DEBUG)
+					Api.World.Logger.Event($"Parsing update for hour {i}/{floorHrs}");
 				CalculateDecompRate(i);
 				DecompositionProgress += CachedDecompositionRate;
 				if (exposedToRain)
 				{
 					_tmpPos.Set(Pos.X + 0.5, Pos.Y + 0.5, Pos.Z + 0.5);
 					float precip = _wsys.GetPrecipitation(_tmpPos.X, _tmpPos.Y, _tmpPos.Z, i / Api.World.Calendar.HoursPerDay);
-					Api.World.Logger.Event($"Precipitation at day {i / Api.World.Calendar.HoursPerDay}: {precip}");
+					if (DEBUG)
+						Api.World.Logger.Event($"Precipitation at day {i / Api.World.Calendar.HoursPerDay}: {precip}");
 					if (precip > 0.04)
 						Wetness = (float)Math.Round(Math.Min(1, Wetness + (precip * WetnessGainFromRainPerTick)), 4);
 				}
@@ -251,6 +274,28 @@ namespace ImprovedComposting
 				{
 					LastTurn = Api.World.Calendar.TotalHours;
 					byPlayer.Entity.World.PlaySoundAt(new AssetLocation("sounds/block/dirt"), blockSel.Position.X + blockSel.HitPosition.X, blockSel.Position.Y + blockSel.HitPosition.Y, blockSel.Position.Z + blockSel.HitPosition.Z, byPlayer, true, 8);
+				}
+				else if (hotbarSlot.Itemstack.Collectible is BlockLiquidContainerBase blcb && blcb.AllowHeldLiquidTransfer && !blcb.IsEmpty(hotbarSlot.Itemstack) && Wetness < 1f)
+				{
+					ItemStack liquid = blcb.GetContent(hotbarSlot.Itemstack);
+					if (DEBUG)
+						Api.World.Logger.Event($"Checking liquid stack of ID: {liquid.Collectible.Code} or {liquid.Item}, amount {liquid.StackSize}");
+					if (liquid.Item.WildCardMatch("waterportion")) 
+					{
+						int targetLiters = (int)Math.Min(blcb.GetCurrentLitres(hotbarSlot.Itemstack), Math.Ceiling(((Wetness < 0.75f ? 0.75f : 1f) - Wetness) / WaterConversionRatio));
+						if (DEBUG)
+							Api.World.Logger.Event($"Target liters: {targetLiters}");
+						if (targetLiters != 0)
+						{
+							if (DEBUG)
+								Api.World.Logger.Event($"Consuming {targetLiters} liters of {liquid.Item} to restore {targetLiters * WaterConversionRatio} wetness");
+							ItemStack consumed = blcb.TryTakeLiquid(hotbarSlot.Itemstack, targetLiters);
+							blcb.DoLiquidMovedEffects(byPlayer, consumed, targetLiters, BlockLiquidContainerBase.EnumLiquidDirection.Fill);
+							// This is for anti-frustration; we waste a little bit of water and cap off wetness from going too high unless we're already above the maximum optimal range
+							Wetness = Math.Min(Wetness < 0.75f ? 0.75f : 1f, Wetness + (targetLiters * WaterConversionRatio));
+							MarkDirty();
+						}
+					}
 				}
 			}
 			else if (!hotbarSlot.Empty)
@@ -316,7 +361,7 @@ namespace ImprovedComposting
 				baseRate *= Math.Max(0.5f, turnMult);
 			}
 			var wetnessDiff = Math.Abs(Wetness - 0.5f);
-			if (wetnessDiff >= 0.25f)
+			if (wetnessDiff > 0.25f)
 			{
 				baseRate *= Math.Max(0.5f, 1 - (2 * wetnessDiff));
 			}

@@ -17,6 +17,7 @@
     "info-composter-lidopen": "Lid is open",
     "info-composter-lastturnedrecently": "Last turned less than a day ago",
     "info-composter-lastturned": "Last turned {0} days ago",
+    "info-composter-wetness": "Wetness: <font color=\"{0}\">{1}%</font>",
     "info-composter-decompositionrate": "Decomposition rate: <font color=\"{0}\">{1}%</font>",
     "info-composter-decompositionprogress": "{0}% decomposed ({1} days left at current rate)",
     "info-composter-needsturning": "<font color=\"#ff8484\">Needs to be turned</font>",
