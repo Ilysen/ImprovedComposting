@@ -240,7 +240,6 @@ namespace ImprovedComposting
 		/// </summary>
 		internal bool OnBlockInteractStart(IPlayer byPlayer, BlockSelection blockSel)
 		{
-			bool shift = byPlayer.Entity.Controls.ShiftKey;
 			var hotbarSlot = byPlayer.InventoryManager.ActiveHotbarSlot;
 			if (DecompositionProgress >= 1f)
 			{
@@ -252,6 +251,7 @@ namespace ImprovedComposting
 						Layers = 0;
 						DecompositionProgress = 0;
 						byPlayer.Entity.World.PlaySoundAt(new AssetLocation("sounds/block/dirt"), blockSel.Position.X + blockSel.HitPosition.X, blockSel.Position.Y + blockSel.HitPosition.Y, blockSel.Position.Z + blockSel.HitPosition.Z, byPlayer, true, 8);
+						MarkDirty();
 					}
 				}
 			}
@@ -259,28 +259,26 @@ namespace ImprovedComposting
 			{
 				if (hotbarSlot.Empty)
 				{
-					if (shift)
-						Wetness += 0.1f;
+					LidClosed = !LidClosed;
+					if (!LidClosed)
+						byPlayer.Entity.World.PlaySoundAt(new AssetLocation("sounds/block/barrelopen"), blockSel.Position.X + blockSel.HitPosition.X, blockSel.Position.Y + blockSel.HitPosition.Y, blockSel.Position.Z + blockSel.HitPosition.Z, byPlayer, true, 8);
 					else
-					{
-						LidClosed = !LidClosed;
-						if (!LidClosed)
-							byPlayer.Entity.World.PlaySoundAt(new AssetLocation("sounds/block/barrelopen"), blockSel.Position.X + blockSel.HitPosition.X, blockSel.Position.Y + blockSel.HitPosition.Y, blockSel.Position.Z + blockSel.HitPosition.Z, byPlayer, true, 8);
-						else
-							byPlayer.Entity.World.PlaySoundAt(new AssetLocation("sounds/player/seal"), blockSel.Position.X + blockSel.HitPosition.X, blockSel.Position.Y + blockSel.HitPosition.Y, blockSel.Position.Z + blockSel.HitPosition.Z, byPlayer, true, 8);
-					}
+						byPlayer.Entity.World.PlaySoundAt(new AssetLocation("sounds/player/seal"), blockSel.Position.X + blockSel.HitPosition.X, blockSel.Position.Y + blockSel.HitPosition.Y, blockSel.Position.Z + blockSel.HitPosition.Z, byPlayer, true, 8);
+					MarkDirty();
 				}
 				else if (hotbarSlot.Itemstack.Collectible?.Tool == EnumTool.Shovel)
 				{
 					LastTurn = Api.World.Calendar.TotalHours;
 					byPlayer.Entity.World.PlaySoundAt(new AssetLocation("sounds/block/dirt"), blockSel.Position.X + blockSel.HitPosition.X, blockSel.Position.Y + blockSel.HitPosition.Y, blockSel.Position.Z + blockSel.HitPosition.Z, byPlayer, true, 8);
+					CalculateDecompRate();
+					MarkDirty();
 				}
 				else if (hotbarSlot.Itemstack.Collectible is BlockLiquidContainerBase blcb && blcb.AllowHeldLiquidTransfer && !blcb.IsEmpty(hotbarSlot.Itemstack) && Wetness < 1f)
 				{
 					ItemStack liquid = blcb.GetContent(hotbarSlot.Itemstack);
 					if (DEBUG)
 						Api.World.Logger.Event($"Checking liquid stack of ID: {liquid.Collectible.Code} or {liquid.Item}, amount {liquid.StackSize}");
-					if (liquid.Item.WildCardMatch("waterportion")) 
+					if (liquid.Item.WildCardMatch("waterportion"))
 					{
 						int targetLiters = (int)Math.Min(blcb.GetCurrentLitres(hotbarSlot.Itemstack), Math.Ceiling(((Wetness < 0.75f ? 0.75f : 1f) - Wetness) / WaterConversionRatio));
 						if (DEBUG)
@@ -293,6 +291,7 @@ namespace ImprovedComposting
 							blcb.DoLiquidMovedEffects(byPlayer, consumed, targetLiters, BlockLiquidContainerBase.EnumLiquidDirection.Fill);
 							// This is for anti-frustration; we waste a little bit of water and cap off wetness from going too high unless we're already above the maximum optimal range
 							Wetness = Math.Min(Wetness < 0.75f ? 0.75f : 1f, Wetness + (targetLiters * WaterConversionRatio));
+							CalculateDecompRate();
 							MarkDirty();
 						}
 					}
@@ -313,10 +312,9 @@ namespace ImprovedComposting
 							Api.World.PlaySoundAt(sndId, Pos.X + 0.5, Pos.Y + 0.1, Pos.Z + 0.5, byPlayer, true, 12);
 							AddLayer();
 							if (byPlayer.Entity.Player.WorldData.CurrentGameMode != EnumGameMode.Creative)
-							{
 								hotbarSlot.TakeOut(stack.Quantity);
-								hotbarSlot.MarkDirty();
-							}
+							hotbarSlot.MarkDirty();
+							MarkDirty();
 							break;
 						}
 					}
